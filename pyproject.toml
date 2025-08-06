@@ -20,7 +20,7 @@ classifiers = [
 dependencies = [
   "crossplane-function-sdk-python==0.6.0",
   "click==8.2.1",
-  "grpcio==1.71.0",
+  "grpcio==1.74.0",
 ]
 
 dynamic = ["version"]
