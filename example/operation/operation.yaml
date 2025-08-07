@@ -23,9 +23,14 @@ spec:
         import socket
         from datetime import datetime
         
+        from crossplane.function import request, response
+
         def operate(req, rsp):
             # Get the Ingress resource
-            ingress = req.required_resources["ingress"].resource
+            ingress = request.get_required_resource(req, "ingress")
+            if not ingress:
+                response.set_output(rsp, {"error": "No ingress resource found"})
+                return
             
             # Extract hostname from Ingress rules
             hostname = ingress["spec"]["rules"][0]["host"]
@@ -40,6 +45,10 @@ spec:
             # Parse expiration date
             expiry_date = datetime.strptime(cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
             days_until_expiry = (expiry_date - datetime.now()).days
+            
+            # Add warning if certificate expires soon
+            if days_until_expiry < 30:
+                response.warning(rsp, f"Certificate for {hostname} expires in {days_until_expiry} days")
             
             # Annotate the Ingress with certificate expiry info
             rsp.desired.resources["ingress"].resource.update({
@@ -57,7 +66,7 @@ spec:
             })
             
             # Return results in operation output for monitoring
-            rsp.output.update({
+            response.set_output(rsp, {
                 "hostname": hostname,
                 "certificateExpires": cert['notAfter'],
                 "daysUntilExpiry": days_until_expiry,
