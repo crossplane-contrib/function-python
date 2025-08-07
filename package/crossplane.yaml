@@ -3,4 +3,7 @@ apiVersion: meta.pkg.crossplane.io/v1beta1
 kind: Function
 metadata:
   name: function-python
-spec: {}
+spec:
+  capabilities:
+  - composition
+  - operation

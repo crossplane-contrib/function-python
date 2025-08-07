@@ -17,7 +17,9 @@ class FunctionRunner(grpcv1.FunctionRunnerService):
         self.log = logging.get_logger()
 
     async def RunFunction(
-        self, req: fnv1.RunFunctionRequest, _: grpc.aio.ServicerContext
+        self,
+        req: fnv1.RunFunctionRequest,
+        _: grpc.aio.ServicerContext,
     ) -> fnv1.RunFunctionResponse:
         """Run the function."""
         log = self.log.bind(tag=req.meta.tag)
@@ -31,7 +33,25 @@ class FunctionRunner(grpcv1.FunctionRunnerService):
 
         log.debug("Running script", script=req.input["script"])
         script = load_module("script", req.input["script"])
-        script.compose(req, rsp)
+
+        has_compose = hasattr(script, "compose")
+        has_operate = hasattr(script, "operate")
+
+        match (has_compose, has_operate):
+            case (True, True):
+                msg = "script must define only one function: compose or operate"
+                log.debug(msg)
+                response.fatal(rsp, msg)
+            case (True, False):
+                log.debug("running composition function")
+                script.compose(req, rsp)
+            case (False, True):
+                log.debug("running operation function")
+                script.operate(req, rsp)
+            case (False, False):
+                msg = "script must define a compose or operate function"
+                log.debug(msg)
+                response.fatal(rsp, msg)
 
         return rsp
 

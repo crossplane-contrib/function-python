@@ -27,8 +27,10 @@ from function import fn
 @click.option(
     "--insecure",
     is_flag=True,
-    help="Run without mTLS credentials. "
-    "If you supply this flag --tls-certs-dir will be ignored.",
+    help=(
+        "Run without mTLS credentials. "
+        "If you supply this flag --tls-certs-dir will be ignored."
+    ),
 )
 def cli(debug: bool, address: str, tls_certs_dir: str, insecure: bool) -> None:  # noqa:FBT001  # We only expect callers via the CLI.
     """A Crossplane composition function."""
