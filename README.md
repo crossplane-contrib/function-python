@@ -2,9 +2,11 @@
 
 [![CI](https://github.com/crossplane-contrib/function-python/actions/workflows/ci.yml/badge.svg)](https://github.com/crossplane-contrib/function-python/actions/workflows/ci.yml)
 
-A Crossplane composition function that lets you compose resources using Python.
+A Crossplane function that lets you compose resources and run operational tasks using Python.
 
-Provide a Python script that defines a `compose` function with this signature:
+## Composition Functions
+
+To compose resources, provide a Python script that defines a `compose` function with this signature:
 
 ```python
 from crossplane.function.proto.v1 import run_function_pb2 as fnv1
@@ -59,6 +61,56 @@ spec:
             })
             rsp.desired.resources["bucket"].ready = True
 ```
+
+## Operations Functions (Alpha)
+
+`function-python` also supports Crossplane Operations, which are one-time operational tasks that run to completion (like Kubernetes Jobs). For operations, provide a Python script that defines an `operate` function with this signature:
+
+```python
+from crossplane.function.proto.v1 import run_function_pb2 as fnv1
+
+def operate(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
+    # Your operational logic here
+
+    # Set output for operation monitoring
+    rsp.output["result"] = "success"
+    rsp.output["message"] = "Operation completed successfully"
+```
+
+### Operation Example
+
+```yaml
+apiVersion: ops.crossplane.io/v1alpha1
+kind: Operation
+metadata:
+  name: check-cert-expiry
+spec:
+  template:
+    spec:
+      pipeline:
+      - step: check-certificate
+        functionRef:
+          name: function-python
+        input:
+          apiVersion: python.fn.crossplane.io/v1beta1
+          kind: Script
+          script: |
+            from crossplane.function.proto.v1 import run_function_pb2 as fnv1
+            import datetime
+
+            def operate(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
+                # Example: Check certificate expiration
+                # In real use, you'd retrieve and validate actual certificates
+
+                # Set operation output
+                rsp.output["check_time"] = datetime.datetime.now().isoformat()
+                rsp.output["status"] = "healthy"
+                rsp.output["message"] = "Certificate expiry check completed"
+```
+
+For more complex operations, see the [operation examples](example/operation/).
+
+## Usage Notes
 
 `function-python` is best for very simple cases. If writing Python inline of
 YAML becomes unwieldy, consider building a Python function using

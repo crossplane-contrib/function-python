@@ -48,6 +48,11 @@ dependencies = ["ipython==9.4.0"]
 [tool.hatch.envs.default.scripts]
 development = "python function/main.py --insecure --debug"
 
+# This special environment is used by hatch fmt.
+[tool.hatch.envs.hatch-static-analysis]
+dependencies = ["ruff==0.12.7"]
+config-path = "none"            # Disable Hatch's default Ruff config.
+
 [tool.hatch.envs.lint]
 type = "virtual"
 detached = true
@@ -67,9 +72,7 @@ unit = "python -m unittest tests/*.py"
 [tool.ruff]
 target-version = "py311"
 exclude = ["function/proto/*"]
-
-[tool.ruff.lint]
-select = [
+lint.select = [
   "A",
   "ARG",
   "ASYNC",
@@ -99,7 +102,7 @@ select = [
   "W",
   "YTT",
 ]
-ignore = ["ISC001"] # Ruff warns this is incompatible with ruff format.
+lint.ignore = ["ISC001"] # Ruff warns this is incompatible with ruff format.
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D"] # Don't require docstrings for tests.
