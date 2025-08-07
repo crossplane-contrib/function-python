@@ -10,5 +10,5 @@ $ hatch run development
 
 ```shell
 # Then, in another terminal, call it with these example manifests
-$ crossplane beta render xr.yaml composition.yaml functions.yaml -r
+$ crossplane render xr.yaml composition.yaml functions.yaml -r
 ```
