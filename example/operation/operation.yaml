@@ -1,0 +1,65 @@
+apiVersion: ops.crossplane.io/v1alpha1
+kind: Operation
+metadata:
+  name: check-cert-expiry
+spec:
+  mode: Pipeline
+  pipeline:
+  - step: check-certificate
+    functionRef:
+      name: function-python
+    requirements:
+      requiredResources:
+      - requirementName: ingress
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        name: example-ingress
+        namespace: default
+    input:
+      apiVersion: python.fn.crossplane.io/v1beta1
+      kind: Script
+      script: |
+        import ssl
+        import socket
+        from datetime import datetime
+        
+        def operate(req, rsp):
+            # Get the Ingress resource
+            ingress = req.required_resources["ingress"].resource
+            
+            # Extract hostname from Ingress rules
+            hostname = ingress["spec"]["rules"][0]["host"]
+            port = 443
+            
+            # Get SSL certificate info
+            context = ssl.create_default_context()
+            with socket.create_connection((hostname, port)) as sock:
+                with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                    cert = ssock.getpeercert()
+            
+            # Parse expiration date
+            expiry_date = datetime.strptime(cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
+            days_until_expiry = (expiry_date - datetime.now()).days
+            
+            # Annotate the Ingress with certificate expiry info
+            rsp.desired.resources["ingress"].resource.update({
+                "apiVersion": "networking.k8s.io/v1",
+                "kind": "Ingress",
+                "metadata": {
+                    "name": ingress["metadata"]["name"],
+                    "namespace": ingress["metadata"]["namespace"],
+                    "annotations": {
+                        "cert-monitor.crossplane.io/expires": cert['notAfter'],
+                        "cert-monitor.crossplane.io/days-until-expiry": str(days_until_expiry),
+                        "cert-monitor.crossplane.io/status": "warning" if days_until_expiry < 30 else "ok"
+                    }
+                }
+            })
+            
+            # Return results in operation output for monitoring
+            rsp.output.update({
+                "hostname": hostname,
+                "certificateExpires": cert['notAfter'],
+                "daysUntilExpiry": days_until_expiry,
+                "status": "warning" if days_until_expiry < 30 else "ok"
+            })

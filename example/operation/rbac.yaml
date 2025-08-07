@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: operation-ingress-access
+  labels:
+    rbac.crossplane.io/aggregate-to-crossplane: "true"
+rules:
+# Allow Operations to read and update Ingress resources
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "patch", "update"]
