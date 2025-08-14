@@ -50,14 +50,14 @@ development = "python function/main.py --insecure --debug"
 
 # This special environment is used by hatch fmt.
 [tool.hatch.envs.hatch-static-analysis]
-dependencies = ["ruff==0.12.7"]
+dependencies = ["ruff==0.12.9"]
 config-path = "none"            # Disable Hatch's default Ruff config.
 
 [tool.hatch.envs.lint]
 type = "virtual"
 detached = true
 path = ".venv-lint"
-dependencies = ["ruff==0.12.7"]
+dependencies = ["ruff==0.12.9"]
 
 [tool.hatch.envs.lint.scripts]
 check = "ruff check function tests && ruff format --diff function tests"
