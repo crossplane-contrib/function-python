@@ -47,13 +47,13 @@ from function import fn
     help=("Maximum size of sent messages in MB."),
 )
 def cli(
-    debug: bool,
+    debug: bool,  # noqa:FBT001
     address: str,
     tls_certs_dir: str,
-    insecure: bool,
+    insecure: bool,  # noqa:FBT001
     max_recv_message_size: int,
     max_send_message_size: int,
-) -> None:  # noqa:FBT001  # We only expect callers via the CLI.
+) -> None:  # We only expect callers via the CLI.
     """A Crossplane composition function."""
     try:
         level = logging.Level.INFO
