@@ -116,6 +116,3 @@ convention = "google"
 [tool.ruff.lint.pep8-naming]
 # gRPC requires this PascalCase function name.
 extend-ignore-names = ["RunFunction"]
-
-[tool.ruff.lint.pylint]
-max-args = 6

@@ -46,11 +46,11 @@ from function import fn
     type=click.INT,
     help=("Maximum size of sent messages in MB."),
 )
-def cli(
-    debug: bool,  # noqa:FBT001
+def cli(  # noqa: PLR0913
+    debug: bool,  # noqa: FBT001
     address: str,
     tls_certs_dir: str,
-    insecure: bool,  # noqa:FBT001
+    insecure: bool,  # noqa: FBT001
     max_recv_message_size: int,
     max_send_message_size: int,
 ) -> None:  # We only expect callers via the CLI.
