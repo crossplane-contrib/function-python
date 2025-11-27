@@ -32,7 +32,28 @@ from function import fn
         "If you supply this flag --tls-certs-dir will be ignored."
     ),
 )
-def cli(debug: bool, address: str, tls_certs_dir: str, insecure: bool) -> None:  # noqa:FBT001  # We only expect callers via the CLI.
+@click.option(
+    "--max-recv-message-size",
+    default=4,
+    show_default=True,
+    type=click.INT,
+    help=("Maximum size of received messages in MB."),
+)
+@click.option(
+    "--max-send-message-size",
+    default=4,
+    show_default=True,
+    type=click.INT,
+    help=("Maximum size of sent messages in MB."),
+)
+def cli(  # noqa: PLR0913
+    debug: bool,  # noqa: FBT001
+    address: str,
+    tls_certs_dir: str,
+    insecure: bool,  # noqa: FBT001
+    max_recv_message_size: int,
+    max_send_message_size: int,
+) -> None:  # We only expect callers via the CLI.
     """A Crossplane composition function."""
     try:
         level = logging.Level.INFO
@@ -44,6 +65,16 @@ def cli(debug: bool, address: str, tls_certs_dir: str, insecure: bool) -> None: 
             address,
             creds=runtime.load_credentials(tls_certs_dir),
             insecure=insecure,
+            options=[
+                (
+                    "grpc.max_receive_message_length",
+                    1024 * 1024 * max_recv_message_size,
+                ),
+                (
+                    "grpc.max_send_message_length",
+                    1024 * 1024 * max_send_message_size,
+                ),
+            ],
         )
     except Exception as e:
         click.echo(f"Cannot run function: {e}")
