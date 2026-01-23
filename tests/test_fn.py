@@ -24,10 +24,34 @@ def compose(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
     })
 """
 
+async_composition_script = """
+from crossplane.function.proto.v1 import run_function_pb2 as fnv1
+
+async def compose(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
+    rsp.desired.resources["bucket"].resource.update({
+        "apiVersion": "s3.aws.upbound.io/v1beta2",
+        "kind": "Bucket",
+        "spec": {
+            "forProvider": {
+                "region": "us-east-1"
+            }
+        },
+    })
+"""
+
 operation_script = """
 from crossplane.function.proto.v1 import run_function_pb2 as fnv1
 
 def operate(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
+    # Set output for operation monitoring
+    rsp.output["result"] = "success"
+    rsp.output["message"] = "Operation completed successfully"
+"""
+
+async_operation_script = """
+from crossplane.function.proto.v1 import run_function_pb2 as fnv1
+
+async def operate(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
     # Set output for operation monitoring
     rsp.output["result"] = "success"
     rsp.output["message"] = "Operation completed successfully"
@@ -91,6 +115,31 @@ class TestFunctionRunner(unittest.IsolatedAsyncioTestCase):
                     context=structpb.Struct(),
                 ),
             ),
+            TestCase(
+                reason="Function should run async composition scripts with await.",
+                req=fnv1.RunFunctionRequest(
+                    input=resource.dict_to_struct({"script": async_composition_script}),
+                ),
+                want=fnv1.RunFunctionResponse(
+                    meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
+                    desired=fnv1.State(
+                        resources={
+                            "bucket": fnv1.Resource(
+                                resource=resource.dict_to_struct(
+                                    {
+                                        "apiVersion": "s3.aws.upbound.io/v1beta2",
+                                        "kind": "Bucket",
+                                        "spec": {
+                                            "forProvider": {"region": "us-east-1"}
+                                        },
+                                    }
+                                )
+                            )
+                        }
+                    ),
+                    context=structpb.Struct(),
+                ),
+            ),
         ]
 
         runner = fn.FunctionRunner()
@@ -115,6 +164,23 @@ class TestFunctionRunner(unittest.IsolatedAsyncioTestCase):
                 reason="Function should run operation scripts with operate().",
                 req=fnv1.RunFunctionRequest(
                     input=resource.dict_to_struct({"script": operation_script}),
+                ),
+                want=fnv1.RunFunctionResponse(
+                    meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
+                    desired=fnv1.State(),
+                    context=structpb.Struct(),
+                    output=resource.dict_to_struct(
+                        {
+                            "result": "success",
+                            "message": "Operation completed successfully",
+                        }
+                    ),
+                ),
+            ),
+            TestCase(
+                reason="Function should run async operation scripts with await.",
+                req=fnv1.RunFunctionRequest(
+                    input=resource.dict_to_struct({"script": async_operation_script}),
                 ),
                 want=fnv1.RunFunctionResponse(
                     meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
