@@ -110,6 +110,13 @@ spec:
 
 For more complex operations, see the [operation examples](example/operation/).
 
+## Async Functions
+
+`function-python` supports async functions for compositions and operations.  Use `async def compose()`
+and `async def operate()` to define async functions.  `async` should be used if the script/function
+is making network or other potentially blocking IO calls `async`.  This allows
+`function-python` to serve multiple requests concurrently without blocking.
+
 ## Usage Notes
 
 `function-python` is best for very simple cases. If writing Python inline of

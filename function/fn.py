@@ -1,6 +1,7 @@
 """A Crossplane composition function."""
 
 import importlib.util
+import inspect
 import types
 
 import grpc
@@ -44,10 +45,16 @@ class FunctionRunner(grpcv1.FunctionRunnerService):
                 response.fatal(rsp, msg)
             case (True, False):
                 log.debug("running composition function")
-                script.compose(req, rsp)
+                if inspect.iscoroutinefunction(script.compose):
+                    await script.compose(req, rsp)
+                else:
+                    script.compose(req, rsp)
             case (False, True):
                 log.debug("running operation function")
-                script.operate(req, rsp)
+                if inspect.iscoroutinefunction(script.operate):
+                    await script.operate(req, rsp)
+                else:
+                    script.operate(req, rsp)
             case (False, False):
                 msg = "script must define a compose or operate function"
                 log.debug(msg)
