@@ -2,7 +2,6 @@
 
 import importlib.util
 import inspect
-import sys
 import traceback
 import types
 
@@ -53,7 +52,10 @@ class FunctionRunner(grpcv1.FunctionRunnerService):
                     else:
                         script.compose(req, rsp)
                 except Exception as e:
-                    msg = f"Exception: {type(e)}, traceback: {traceback.format_tb(e.__traceback__.tb_next)}"
+                    msg = (
+                        f"Exception: {type(e)}, "
+                        f"traceback: {traceback.format_tb(e.__traceback__.tb_next)}"
+                    )
                     log.debug(msg)
                     response.fatal(rsp, msg)
 
@@ -65,7 +67,10 @@ class FunctionRunner(grpcv1.FunctionRunnerService):
                     else:
                         script.operate(req, rsp)
                 except Exception as e:
-                    msg = f"Exception: {e}, traceback: {traceback.format_tb(e.__traceback__.tb_next)}"
+                    msg = (
+                        f"Exception: {e}, "
+                        f"traceback: {traceback.format_tb(e.__traceback__.tb_next)}"
+                    )
                     log.debug(msg)
                     response.fatal(rsp, msg)
 
