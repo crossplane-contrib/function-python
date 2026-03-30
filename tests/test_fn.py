@@ -24,6 +24,22 @@ def compose(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
     })
 """
 
+composition_script_with_exception = """
+from crossplane.function.proto.v1 import run_function_pb2 as fnv1
+
+def compose(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
+    rsp.desired.resources["bucket"].resource.update({
+        "apiVersion": "s3.aws.upbound.io/v1beta2",
+        "kind": "Bucket",
+        "spec": {
+            "forProvider": {
+                "region": "us-east-1"
+            }
+        },
+    })
+    raise AttributeError
+"""
+
 async_composition_script = """
 from crossplane.function.proto.v1 import run_function_pb2 as fnv1
 
@@ -37,6 +53,22 @@ async def compose(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
             }
         },
     })
+"""
+
+async_composition_script_with_exception = """
+from crossplane.function.proto.v1 import run_function_pb2 as fnv1
+
+async def compose(req: fnv1.RunFunctionRequest, rsp: fnv1.RunFunctionResponse):
+    rsp.desired.resources["bucket"].resource.update({
+        "apiVersion": "s3.aws.upbound.io/v1beta2",
+        "kind": "Bucket",
+        "spec": {
+            "forProvider": {
+                "region": "us-east-1"
+            }
+        },
+    })
+    raise AttributeError
 """
 
 operation_script = """
@@ -122,6 +154,106 @@ class TestFunctionRunner(unittest.IsolatedAsyncioTestCase):
                 ),
                 want=fnv1.RunFunctionResponse(
                     meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
+                    desired=fnv1.State(
+                        resources={
+                            "bucket": fnv1.Resource(
+                                resource=resource.dict_to_struct(
+                                    {
+                                        "apiVersion": "s3.aws.upbound.io/v1beta2",
+                                        "kind": "Bucket",
+                                        "spec": {
+                                            "forProvider": {"region": "us-east-1"}
+                                        },
+                                    }
+                                )
+                            )
+                        }
+                    ),
+                    context=structpb.Struct(),
+                ),
+            ),
+            TestCase(
+                reason="Function should fail gracefully when script is missing.",
+                req=fnv1.RunFunctionRequest(
+                    input=resource.dict_to_struct({}),
+                ),
+                want=fnv1.RunFunctionResponse(
+                    meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
+                    results=[
+                        {
+                            "message": "missing script in function input",
+                            "severity": "SEVERITY_FATAL",
+                        }
+                    ],
+                    desired=fnv1.State(),
+                    context=structpb.Struct(),
+                ),
+            ),
+            TestCase(
+                reason="Function should fail gracefully when script is empty.",
+                req=fnv1.RunFunctionRequest(
+                    input=resource.dict_to_struct({"script": ""}),
+                ),
+                want=fnv1.RunFunctionResponse(
+                    meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
+                    results=[
+                        {
+                            "message": "missing script in function input",
+                            "severity": "SEVERITY_FATAL",
+                        }
+                    ],
+                    desired=fnv1.State(),
+                    context=structpb.Struct(),
+                ),
+            ),
+            TestCase(
+                reason="Function should fail gracefully when compose script raises an exception.",
+                req=fnv1.RunFunctionRequest(
+                    input=resource.dict_to_struct(
+                        {"script": composition_script_with_exception}
+                    ),
+                ),
+                want=fnv1.RunFunctionResponse(
+                    meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
+                    results=[
+                        {
+                            "message": "Exception: <class 'AttributeError'>, traceback: ['  File \"<string>\", line 14, in compose\\n']",
+                            "severity": "SEVERITY_FATAL",
+                        }
+                    ],
+                    desired=fnv1.State(
+                        resources={
+                            "bucket": fnv1.Resource(
+                                resource=resource.dict_to_struct(
+                                    {
+                                        "apiVersion": "s3.aws.upbound.io/v1beta2",
+                                        "kind": "Bucket",
+                                        "spec": {
+                                            "forProvider": {"region": "us-east-1"}
+                                        },
+                                    }
+                                )
+                            )
+                        }
+                    ),
+                    context=structpb.Struct(),
+                ),
+            ),
+            TestCase(
+                reason="Function should fail gracefully when async compose script raises an exception.",
+                req=fnv1.RunFunctionRequest(
+                    input=resource.dict_to_struct(
+                        {"script": async_composition_script_with_exception}
+                    ),
+                ),
+                want=fnv1.RunFunctionResponse(
+                    meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
+                    results=[
+                        {
+                            "message": "Exception: <class 'AttributeError'>, traceback: ['  File \"<string>\", line 14, in compose\\n']",
+                            "severity": "SEVERITY_FATAL",
+                        }
+                    ],
                     desired=fnv1.State(
                         resources={
                             "bucket": fnv1.Resource(
