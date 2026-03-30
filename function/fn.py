@@ -2,6 +2,8 @@
 
 import importlib.util
 import inspect
+import sys
+import traceback
 import types
 
 import grpc
@@ -24,12 +26,12 @@ class FunctionRunner(grpcv1.FunctionRunnerService):
     ) -> fnv1.RunFunctionResponse:
         """Run the function."""
         log = self.log.bind(tag=req.meta.tag)
-        log.info("Running function")
+        log.debug("Running function")
 
         rsp = response.to(req)
 
-        if req.input["script"] is None:
-            response.fatal(rsp, "missing script")
+        if "script" not in req.input or not req.input["script"]:
+            response.fatal(rsp, "missing script in function input")
             return rsp
 
         log.debug("Running script", script=req.input["script"])
@@ -44,22 +46,34 @@ class FunctionRunner(grpcv1.FunctionRunnerService):
                 log.debug(msg)
                 response.fatal(rsp, msg)
             case (True, False):
-                log.debug("running composition function")
-                if inspect.iscoroutinefunction(script.compose):
-                    await script.compose(req, rsp)
-                else:
-                    script.compose(req, rsp)
+                try:
+                    log.debug("running composition function")
+                    if inspect.iscoroutinefunction(script.compose):
+                        await script.compose(req, rsp)
+                    else:
+                        script.compose(req, rsp)
+                except Exception as e:
+                    msg = f"Exception: {type(e)}, traceback: {traceback.format_tb(e.__traceback__.tb_next)}"
+                    log.debug(msg)
+                    response.fatal(rsp, msg)
+
             case (False, True):
                 log.debug("running operation function")
-                if inspect.iscoroutinefunction(script.operate):
-                    await script.operate(req, rsp)
-                else:
-                    script.operate(req, rsp)
+                try:
+                    if inspect.iscoroutinefunction(script.operate):
+                        await script.operate(req, rsp)
+                    else:
+                        script.operate(req, rsp)
+                except Exception as e:
+                    msg = f"Exception: {e}, traceback: {traceback.format_tb(e.__traceback__.tb_next)}"
+                    log.debug(msg)
+                    response.fatal(rsp, msg)
+
             case (False, False):
                 msg = "script must define a compose or operate function"
                 log.debug(msg)
                 response.fatal(rsp, msg)
-
+        log.debug(f"Response: {rsp}")
         return rsp
 
 
