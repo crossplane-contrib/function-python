@@ -207,7 +207,8 @@ class TestFunctionRunner(unittest.IsolatedAsyncioTestCase):
                 ),
             ),
             TestCase(
-                reason="Function should fail gracefully when compose script raises an exception.",
+                reason="Function should fail gracefully when compose script raises"
+                " an exception.",
                 req=fnv1.RunFunctionRequest(
                     input=resource.dict_to_struct(
                         {"script": composition_script_with_exception}
@@ -217,7 +218,9 @@ class TestFunctionRunner(unittest.IsolatedAsyncioTestCase):
                     meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
                     results=[
                         {
-                            "message": "Exception: <class 'AttributeError'>, traceback: ['  File \"<string>\", line 14, in compose\\n']",
+                            "message": "Exception: <class 'AttributeError'>, traceback:"
+                            " ['  File \"<string>\", line 14, in compose\\n'"
+                            "]",
                             "severity": "SEVERITY_FATAL",
                         }
                     ],
@@ -240,7 +243,8 @@ class TestFunctionRunner(unittest.IsolatedAsyncioTestCase):
                 ),
             ),
             TestCase(
-                reason="Function should fail gracefully when async compose script raises an exception.",
+                reason="Function should fail gracefully when async compose script"
+                " raises an exception.",
                 req=fnv1.RunFunctionRequest(
                     input=resource.dict_to_struct(
                         {"script": async_composition_script_with_exception}
@@ -250,7 +254,9 @@ class TestFunctionRunner(unittest.IsolatedAsyncioTestCase):
                     meta=fnv1.ResponseMeta(ttl=durationpb.Duration(seconds=60)),
                     results=[
                         {
-                            "message": "Exception: <class 'AttributeError'>, traceback: ['  File \"<string>\", line 14, in compose\\n']",
+                            "message": "Exception: <class 'AttributeError'>, traceback:"
+                            " ['  File \"<string>\", line 14, in compose\\n'"
+                            "]",
                             "severity": "SEVERITY_FATAL",
                         }
                     ],
